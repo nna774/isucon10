@@ -23,6 +23,7 @@ import (
 
 const Limit = 20
 const NazotteLimit = 50
+const EstateQueryString = "id, thumbnail, name, ST_X(coordinate), ST_Y(coordinate), address, rent, door_height, door_width, popularity, description, features"
 
 var db *sqlx.DB
 var mySQLConnectionData *MySQLConnectionEnv
@@ -66,8 +67,8 @@ type Estate struct {
 	Thumbnail   string  `db:"thumbnail" json:"thumbnail"`
 	Name        string  `db:"name" json:"name"`
 	Description string  `db:"description" json:"description"`
-	Latitude    float64 `db:"latitude" json:"latitude"`
-	Longitude   float64 `db:"longitude" json:"longitude"`
+	Latitude    float64 `db:"ST_X(coordinate)" json:"latitude"`
+	Longitude   float64 `db:"ST_Y(coordinate)" json:"longitude"`
 	Address     string  `db:"address" json:"address"`
 	Rent        int64   `db:"rent" json:"rent"`
 	DoorHeight  int64   `db:"door_height" json:"doorHeight"`
@@ -291,8 +292,8 @@ func main() {
 func initialize(c echo.Context) error {
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
-		filepath.Join(sqlDir, "0_Schema.sql"),
-		filepath.Join(sqlDir, "1_DummyEstateData.sql"),
+		filepath.Join(sqlDir, "0_NewSchema.sql"),
+		filepath.Join(sqlDir, "1_NewDummyEstateData.sql"),
 		filepath.Join(sqlDir, "2_DummyChairData.sql"),
 	}
 
@@ -615,7 +616,7 @@ func getEstateDetail(c echo.Context) error {
 	}
 
 	var estate Estate
-	err = db.Get(&estate, "SELECT * FROM estate WHERE id = ?", id)
+	err = db.Get(&estate, fmt.Sprintf("SELECT %s FROM estate WHERE id = ?", EstateQueryString), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Echo().Logger.Infof("getEstateDetail estate id %v not found", id)
@@ -683,7 +684,8 @@ func postEstate(c echo.Context) error {
 			c.Logger().Errorf("failed to read record: %v", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-		_, err := tx.Exec("INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", id, name, description, thumbnail, address, latitude, longitude, rent, doorHeight, doorWidth, features, popularity)
+    point := fmt.Sprintf("POINT(%f %f)", latitude, longitude)
+		_, err := tx.Exec("INSERT INTO estate(id, name, description, thumbnail, address, coordinate, rent, door_height, door_width, features, popularity) VALUES(?,?,?,?,?,ST_PointFromText(?),?,?,?,?,?)", id, name, description, thumbnail, address, point, rent, doorHeight, doorWidth, features, popularity)
 		if err != nil {
 			c.Logger().Errorf("failed to insert estate: %v", err)
 			return c.NoContent(http.StatusInternalServerError)
@@ -775,7 +777,7 @@ func searchEstates(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	searchQuery := "SELECT * FROM estate WHERE "
+	searchQuery := fmt.Sprintf("SELECT %s FROM estate WHERE ", EstateQueryString)
 	countQuery := "SELECT COUNT(*) FROM estate WHERE "
 	searchCondition := strings.Join(conditions, " AND ")
 	limitOffset := " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?"
@@ -805,7 +807,7 @@ func searchEstates(c echo.Context) error {
 
 func getLowPricedEstate(c echo.Context) error {
 	estates := make([]Estate, 0, Limit)
-	query := `SELECT * FROM estate ORDER BY rent ASC, id ASC LIMIT ?`
+	query := fmt.Sprintf(`SELECT %s FROM estate ORDER BY rent ASC, id ASC LIMIT ?`, EstateQueryString)
 	err := db.Select(&estates, query, Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -844,7 +846,7 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	d := chair.Depth
 	lens := []int{int(w), int(h), int(d)}
 	sort.Ints(lens)
-	query = `SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) or (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT ?`
+	query = fmt.Sprintf(`SELECT %s FROM estate WHERE (door_width >= ? AND door_height >= ?) or (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT ?`, EstateQueryString)
 	err = db.Select(&estates, query, lens[0], lens[1], lens[1], lens[0], Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -869,10 +871,9 @@ func searchEstateNazotte(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	b := coordinates.getBoundingBox()
-	estatesInBoundingBox := []Estate{}
-	query := `SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity DESC, id ASC`
-	err = db.Select(&estatesInBoundingBox, query, b.BottomRightCorner.Latitude, b.TopLeftCorner.Latitude, b.BottomRightCorner.Longitude, b.TopLeftCorner.Longitude)
+	estatesInPolygon := []Estate{}
+	query := fmt.Sprintf(`SELECT %s FROM estate WHERE ST_Contains(ST_PolygonFromText(%s), coordinate) ORDER BY popularity DESC, id ASC LIMIT ?`, EstateQueryString, coordinates.coordinatesToText())
+	err = db.Select(&estatesInPolygon, query, NazotteLimit)
 	if err == sql.ErrNoRows {
 		c.Echo().Logger.Infof("select * from estate where latitude ...", err)
 		return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
@@ -881,32 +882,8 @@ func searchEstateNazotte(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	estatesInPolygon := []Estate{}
-	for _, estate := range estatesInBoundingBox {
-		validatedEstate := Estate{}
-
-		point := fmt.Sprintf("'POINT(%f %f)'", estate.Latitude, estate.Longitude)
-		query := fmt.Sprintf(`SELECT * FROM estate WHERE id = ? AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))`, coordinates.coordinatesToText(), point)
-		err = db.Get(&validatedEstate, query, estate.ID)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				continue
-			} else {
-				c.Echo().Logger.Errorf("db access is failed on executing validate if estate is in polygon : %v", err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
-		} else {
-			estatesInPolygon = append(estatesInPolygon, validatedEstate)
-		}
-	}
-
 	var re EstateSearchResponse
-	re.Estates = []Estate{}
-	if len(estatesInPolygon) > NazotteLimit {
-		re.Estates = estatesInPolygon[:NazotteLimit]
-	} else {
-		re.Estates = estatesInPolygon
-	}
+	re.Estates = estatesInPolygon
 	re.Count = int64(len(re.Estates))
 
 	return c.JSON(http.StatusOK, re)
@@ -932,7 +909,7 @@ func postEstateRequestDocument(c echo.Context) error {
 	}
 
 	estate := Estate{}
-	query := `SELECT * FROM estate WHERE id = ?`
+	query := fmt.Sprintf(`SELECT %s FROM estate WHERE id = ?`, EstateQueryString)
 	err = db.Get(&estate, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {

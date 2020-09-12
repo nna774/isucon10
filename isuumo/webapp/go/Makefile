@@ -31,3 +31,8 @@ deploy-nginx:
 	scp nginx/isuumo.conf $(SERVER_NAME):/etc/nginx/sites-enabled/isuumo.conf
 	ssh $(SERVER_NAME) sudo nginx -t
 	ssh $(SERVER_NAME) sudo systemctl restart nginx
+
+deploy-mysql:
+	scp mysql/0_NewSchema.sql $(SERVER_NAME):isuumo/webapp/mysql/db/0_NewSchema.sql
+	scp mysql/1_NewDummyEstateData.sql $(SERVER_NAME):isuumo/webapp/mysql/db/1_NewDummyEstateData.sql
+	scp mysql/init.sh $(SERVER_NAME):isuumo/webapp/mysql/db/init.sh
