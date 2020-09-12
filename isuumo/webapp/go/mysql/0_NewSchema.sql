@@ -34,6 +34,8 @@ CREATE TABLE isuumo.chair
     color       VARCHAR(64)     NOT NULL,
     features    VARCHAR(64)     NOT NULL,
     kind        VARCHAR(64)     NOT NULL,
+    colori      INTEGER         NOT NULL,
+    kindi       INTEGER         NOT NULL,
     popularity  INTEGER         NOT NULL,
     stock       INTEGER         NOT NULL,
     INDEX (price)
