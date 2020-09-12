@@ -18,6 +18,7 @@ CREATE TABLE isuumo.estate
     features    VARCHAR(64)         NOT NULL,
     popularity  INTEGER             NOT NULL,
     INDEX (rent),
+    INDEX (popularity),
     SPATIAL INDEX(coordinate)
 );
 
