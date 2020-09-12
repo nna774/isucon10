@@ -39,9 +39,9 @@ type Chair struct {
 	Description string `db:"description" json:"description"`
 	Thumbnail   string `db:"thumbnail" json:"thumbnail"`
 	Price       int64  `db:"price" json:"price"`
-	Height      int    `db:"height" json:"height"`
-	Width       int    `db:"width" json:"width"`
-	Depth       int    `db:"depth" json:"depth"`
+	Height      int64  `db:"height" json:"height"`
+	Width       int64  `db:"width" json:"width"`
+	Depth       int64  `db:"depth" json:"depth"`
 	Color       string `db:"color" json:"color"`
 	Features    string `db:"features" json:"features"`
 	Kind        string `db:"kind" json:"kind"`
@@ -838,7 +838,7 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	w := chair.Width
 	h := chair.Height
 	d := chair.Depth
-	lens := []int{w, h, d}
+	lens := []int{int(w), int(h), int(d)}
 	sort.Ints(lens)
 	query = `SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) or (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT ?`
 	err = db.Select(&estates, query, lens[0], lens[1], lens[1], lens[0], Limit)
