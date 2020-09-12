@@ -37,3 +37,5 @@ deploy-mysql:
 	scp mysql/1_NewDummyEstateData.sql $(SERVER_NAME):isuumo/webapp/mysql/db/1_NewDummyEstateData.sql
 	scp mysql/2_DummyChairData.sql  $(SERVER_NAME):isuumo/webapp/mysql/db/2_DummyChairData.sql
 	scp mysql/init.sh $(SERVER_NAME):isuumo/webapp/mysql/db/init.sh
+
+deploy-zenbu: deploy deploy-nginx deploy-mysql
