@@ -17,3 +17,9 @@ get-log2:
 	scp isucon-server2:/var/log/nginx/access.log 2.log
 	alp ltsv -m "/api/chair/\d+","/api/estate/\d+","/api/recommended_estate/\d+","/api/estate/req_doc/\d+","/api/chair/buy/\d+" < 2.log
 	wc -l 2.log
+
+deploy-nginx2:
+	ssh isucon-server2 sudo chown isucon:isucon /etc/nginx/nginx.conf /etc/nginx/sites-enabled/isuumo.conf
+	scp nginx/nginx.conf isucon-server2:/etc/nginx/nginx.conf
+	scp nginx/isuumo.conf isucon-server2:/etc/nginx/sites-enabled/isuumo.conf
+	ssh isucon-server2 sudo systemctl restart nginx
