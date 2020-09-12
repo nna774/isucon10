@@ -1,0 +1,17 @@
+ Host isucon-bastion
+   HostName 157.112.65.75
+   Port 20340
+   User isucon
+
+ Host isucon-server1
+   ProxyJump isucon-bastion
+   User isucon
+   HostName 10.163.29.101
+ Host isucon-server2
+   ProxyJump isucon-bastion
+   User isucon
+   HostName 10.163.29.102
+ Host isucon-server3
+   ProxyJump isucon-bastion
+   User isucon
+   HostName 10.163.29.103
