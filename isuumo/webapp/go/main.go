@@ -31,6 +31,7 @@ var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
 var chairSearchConditionString []byte
 var estateSearchConditionString []byte
+var estatesCache = make([]Estate, 0, Limit)
 
 type InitializeResponse struct {
 	Language string `json:"language"`
@@ -732,6 +733,7 @@ func postEstate(c echo.Context) error {
 		c.Logger().Errorf("failed to commit tx: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	estatesCache = make([]Estate, 0, Limit)
 	return c.NoContent(http.StatusCreated)
 }
 
@@ -839,23 +841,24 @@ func searchEstates(c echo.Context) error {
 
 	res.Estates = estates
 
+	go c.Logger().Debugf("search Query: %v", searchQuery+searchCondition+limitOffset)
 	return c.JSON(http.StatusOK, res)
 }
 
 func getLowPricedEstate(c echo.Context) error {
-	estates := make([]Estate, 0, Limit)
-	query := fmt.Sprintf(`SELECT %s FROM estate ORDER BY rent ASC, id ASC LIMIT ?`, EstateQueryString)
-	err := db.Select(&estates, query, Limit)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.Logger().Error("getLowPricedEstate not found")
-			return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
+	if len(estatesCache) == 0 {
+		query := fmt.Sprintf(`SELECT %s FROM estate ORDER BY rent ASC, id ASC LIMIT ?`, EstateQueryString)
+		err := db.Select(&estatesCache, query, Limit)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.Logger().Error("getLowPricedEstate not found")
+				return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
+			}
+			c.Logger().Errorf("getLowPricedEstate DB execution error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
 		}
-		c.Logger().Errorf("getLowPricedEstate DB execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
 	}
-
-	return c.JSON(http.StatusOK, EstateListResponse{Estates: estates})
+	return c.JSON(http.StatusOK, EstateListResponse{Estates: estatesCache})
 }
 
 func searchRecommendedEstateWithChair(c echo.Context) error {
