@@ -25,4 +25,5 @@ deploy-nginx2:
 	ssh isucon-server2 sudo chown isucon:isucon /etc/nginx/nginx.conf /etc/nginx/sites-enabled/isuumo.conf
 	scp nginx/nginx.conf isucon-server2:/etc/nginx/nginx.conf
 	scp nginx/isuumo.conf isucon-server2:/etc/nginx/sites-enabled/isuumo.conf
+	ssh isucon-server2 sudo nginx -t
 	ssh isucon-server2 sudo systemctl restart nginx
