@@ -19,7 +19,7 @@ rotate:
 get-log:
 	ssh $(SERVER_NAME) sudo chown isucon:isucon /var/log/nginx/access.log
 	scp $(SERVER_NAME):/var/log/nginx/access.log 2.log
-	make alp2
+	make alp
 
 alp:
 	alp ltsv -m "/api/chair/\d+","/api/estate/\d+","/api/recommended_estate/\d+","/api/estate/req_doc/\d+","/api/chair/buy/\d+" < 2.log
