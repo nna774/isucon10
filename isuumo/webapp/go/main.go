@@ -369,6 +369,8 @@ func postChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	defer tx.Rollback()
+	query, err := tx.Prepare("INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, colori, features, kind, kindi, popularity, stock) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	defer query.Close()
 	for _, row := range records {
 		rm := RecordMapper{Record: row}
 		id := rm.NextInt()
@@ -388,7 +390,7 @@ func postChair(c echo.Context) error {
 			c.Logger().Errorf("failed to read record: %v", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-		_, err := tx.Exec("INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, colori, features, kind, kindi, popularity, stock) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", id, name, description, thumbnail, price, height, width, depth, color, toI(color), features, kind, toI(kind), popularity, stock)
+		_, err := query.Exec(id, name, description, thumbnail, price, height, width, depth, color, toI(color), features, kind, toI(kind), popularity, stock)
 		if err != nil {
 			c.Logger().Errorf("failed to insert chair: %v", err)
 			return c.NoContent(http.StatusInternalServerError)
@@ -691,6 +693,12 @@ func postEstate(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	defer tx.Rollback()
+	query, err := tx.Prepare("INSERT INTO estate(id, name, description, thumbnail, address, coordinate, rent, door_height, door_width, features, popularity) VALUES(?,?,?,?,?,ST_PointFromText(?),?,?,?,?,?)")
+	if err != nil {
+		c.Logger().Errorf("failed to prepare query %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	defer query.Close()
 	for _, row := range records {
 		rm := RecordMapper{Record: row}
 		id := rm.NextInt()
@@ -710,7 +718,7 @@ func postEstate(c echo.Context) error {
 			return c.NoContent(http.StatusBadRequest)
 		}
 		point := fmt.Sprintf("POINT(%f %f)", latitude, longitude)
-		_, err := tx.Exec("INSERT INTO estate(id, name, description, thumbnail, address, coordinate, rent, door_height, door_width, features, popularity) VALUES(?,?,?,?,?,ST_PointFromText(?),?,?,?,?,?)", id, name, description, thumbnail, address, point, rent, doorHeight, doorWidth, features, popularity)
+		_, err := query.Exec(id, name, description, thumbnail, address, point, rent, doorHeight, doorWidth, features, popularity)
 		if err != nil {
 			c.Logger().Errorf("failed to insert estate: %v", err)
 			return c.NoContent(http.StatusInternalServerError)
