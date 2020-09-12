@@ -46,8 +46,10 @@ type Chair struct {
 	Width       int64  `db:"width" json:"width"`
 	Depth       int64  `db:"depth" json:"depth"`
 	Color       string `db:"color" json:"color"`
+	Colori      int64  `db:"colori" json:"-"`
 	Features    string `db:"features" json:"features"`
 	Kind        string `db:"kind" json:"kind"`
+	Kindi       string `db:"kindi" json:"-"`
 	Popularity  int64  `db:"popularity" json:"-"`
 	Stock       int64  `db:"stock" json:"-"`
 }
