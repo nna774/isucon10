@@ -684,7 +684,7 @@ func postEstate(c echo.Context) error {
 			c.Logger().Errorf("failed to read record: %v", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-    point := fmt.Sprintf("POINT(%f %f)", latitude, longitude)
+		point := fmt.Sprintf("POINT(%f %f)", latitude, longitude)
 		_, err := tx.Exec("INSERT INTO estate(id, name, description, thumbnail, address, coordinate, rent, door_height, door_width, features, popularity) VALUES(?,?,?,?,?,ST_PointFromText(?),?,?,?,?,?)", id, name, description, thumbnail, address, point, rent, doorHeight, doorWidth, features, popularity)
 		if err != nil {
 			c.Logger().Errorf("failed to insert estate: %v", err)

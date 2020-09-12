@@ -35,4 +35,5 @@ deploy-nginx:
 deploy-mysql:
 	scp mysql/0_NewSchema.sql $(SERVER_NAME):isuumo/webapp/mysql/db/0_NewSchema.sql
 	scp mysql/1_NewDummyEstateData.sql $(SERVER_NAME):isuumo/webapp/mysql/db/1_NewDummyEstateData.sql
+	scp mysql/2_DummyChairData.sql  $(SERVER_NAME):isuumo/webapp/mysql/db/2_DummyChairData.sql
 	scp mysql/init.sh $(SERVER_NAME):isuumo/webapp/mysql/db/init.sh
