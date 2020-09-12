@@ -41,3 +41,20 @@ deploy-mysql:
 	scp mysql/init.sh $(SERVER_NAME):isuumo/webapp/mysql/db/init.sh
 
 deploy-zenbu: deploy deploy-nginx deploy-mysql
+
+enable_slowquerylog:
+	ssh $(SERVER_NAME) sudo chown isucon:isucon /etc/mysql/mysql.cnf
+	scp mysql/mysql_enable_log.cnf /etc/mysql/mysql.cnf
+	ssh $(SERVER_NAME) sudo systemctl restart mysql
+	ssh $(SERVER_NAME) sudo systemctl restart isuumo.go
+
+disable_slowquerylog:
+	ssh $(SERVER_NAME) sudo chown isucon:isucon /etc/mysql/mysql.cnf
+	scp mysql/mysql_disable_log.cnf /etc/mysql/mysql.cnf
+	ssh $(SERVER_NAME) sudo systemctl restart mysql
+	ssh $(SERVER_NAME) sudo systemctl restart isuumo.go
+
+rotate-sql-log:
+	now=`date +%Y%m%d-%H%M%S` 
+	ssh $(SERVER_NAME) sudo mv /var/log/mysql/slow.log /var/log/mysql/slow.log.$now 
+	ssh $(SERVER_NAME) sudo mysqladmin flush-logs
