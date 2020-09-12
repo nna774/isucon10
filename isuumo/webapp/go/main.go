@@ -28,6 +28,8 @@ var db *sqlx.DB
 var mySQLConnectionData *MySQLConnectionEnv
 var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
+var chairSearchConditionString []byte
+var estateSearchConditionString []byte
 
 type InitializeResponse struct {
 	Language string `json:"language"`
@@ -224,19 +226,19 @@ func (mc *MySQLConnectionEnv) ConnectDB() (*sqlx.DB, error) {
 }
 
 func init() {
-	jsonText, err := ioutil.ReadFile("../fixture/chair_condition.json")
+	chairSearchConditionString, err := ioutil.ReadFile("../fixture/chair_condition.json")
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
-	json.Unmarshal(jsonText, &chairSearchCondition)
+	json.Unmarshal(chairSearchConditionString, &chairSearchCondition)
 
-	jsonText, err = ioutil.ReadFile("../fixture/estate_condition.json")
+	estateSearchConditionString, err = ioutil.ReadFile("../fixture/estate_condition.json")
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
-	json.Unmarshal(jsonText, &estateSearchCondition)
+	json.Unmarshal(estateSearchConditionString, &estateSearchCondition)
 }
 
 func main() {
@@ -584,7 +586,8 @@ func buyChair(c echo.Context) error {
 }
 
 func getChairSearchCondition(c echo.Context) error {
-	return c.JSON(http.StatusOK, chairSearchCondition)
+	_, err := c.Response().Writer.Write(chairSearchConditionString)
+	return err
 }
 
 func getLowPricedChair(c echo.Context) error {
@@ -942,7 +945,8 @@ func postEstateRequestDocument(c echo.Context) error {
 }
 
 func getEstateSearchCondition(c echo.Context) error {
-	return c.JSON(http.StatusOK, estateSearchCondition)
+	_, err := c.Response().Writer.Write(estateSearchConditionString)
+	return err
 }
 
 func (cs Coordinates) getBoundingBox() BoundingBox {
