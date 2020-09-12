@@ -369,6 +369,9 @@ func postChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	defer tx.Rollback()
+	params := make([]interface{}, 0)
+	cnt := 0
+	query := "INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, colori, features, kind, kindi, popularity, stock) VALUES"
 	for _, row := range records {
 		rm := RecordMapper{Record: row}
 		id := rm.NextInt()
@@ -388,11 +391,14 @@ func postChair(c echo.Context) error {
 			c.Logger().Errorf("failed to read record: %v", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-		_, err := tx.Exec("INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, colori, features, kind, kindi, popularity, stock) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", id, name, description, thumbnail, price, height, width, depth, color, toI(color), features, kind, toI(kind), popularity, stock)
-		if err != nil {
-			c.Logger().Errorf("failed to insert chair: %v", err)
-			return c.NoContent(http.StatusInternalServerError)
-		}
+		params = append(params, id, name, description, thumbnail, price, height, width, depth, color, toI(color), features, kind, toI(kind), popularity, stock)
+		cnt++
+	}
+	query = query + strings.Repeat("(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?),", cnt-1) + "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+	_, err = tx.Exec(query, params...)
+	if err != nil {
+		c.Logger().Errorf("failed to insert chair: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
 	}
 	if err := tx.Commit(); err != nil {
 		c.Logger().Errorf("failed to commit tx: %v", err)
@@ -691,6 +697,9 @@ func postEstate(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	defer tx.Rollback()
+	params := make([]interface{}, 0)
+	cnt := 0
+	query := "INSERT INTO estate(id, name, description, thumbnail, address, coordinate, rent, door_height, door_width, features, popularity) VALUES "
 	for _, row := range records {
 		rm := RecordMapper{Record: row}
 		id := rm.NextInt()
@@ -710,11 +719,14 @@ func postEstate(c echo.Context) error {
 			return c.NoContent(http.StatusBadRequest)
 		}
 		point := fmt.Sprintf("POINT(%f %f)", latitude, longitude)
-		_, err := tx.Exec("INSERT INTO estate(id, name, description, thumbnail, address, coordinate, rent, door_height, door_width, features, popularity) VALUES(?,?,?,?,?,ST_PointFromText(?),?,?,?,?,?)", id, name, description, thumbnail, address, point, rent, doorHeight, doorWidth, features, popularity)
-		if err != nil {
-			c.Logger().Errorf("failed to insert estate: %v", err)
-			return c.NoContent(http.StatusInternalServerError)
-		}
+		params = append(params, id, name, description, thumbnail, address, point, rent, doorHeight, doorWidth, features, popularity)
+		cnt++
+	}
+	query = query + strings.Repeat("(?,?,?,?,?,ST_PointFromText(?),?,?,?,?,?),", cnt-1) + "(?,?,?,?,?,ST_PointFromText(?),?,?,?,?,?)"
+	_, err = tx.Exec(query, params...)
+	if err != nil {
+		c.Logger().Errorf("failed to insert estate: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
 	}
 	if err := tx.Commit(); err != nil {
 		c.Logger().Errorf("failed to commit tx: %v", err)
