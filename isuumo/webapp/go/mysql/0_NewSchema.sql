@@ -18,7 +18,7 @@ CREATE TABLE isuumo.estate
     features    VARCHAR(64)         NOT NULL,
     popularity  INTEGER             NOT NULL,
     INDEX (rent),
-    INDEX (door_height),
+    INDEX (door_height, door_width),
     INDEX (door_width),
     INDEX (popularity),
     SPATIAL INDEX(coordinate)
@@ -44,7 +44,7 @@ CREATE TABLE isuumo.chair
     INDEX (price),
     INDEX (width),
     INDEX (height),
-    INDEX (color),
-    INDEX (kind),
+    INDEX (colori),
+    INDEX (kindi),
     INDEX (popularity DESC, id ASC)
 );
