@@ -15,6 +15,8 @@ deploy: isuumo
 rotate:
 	ssh $(SERVER_NAME) sudo rm /var/log/nginx/access.log
 	ssh $(SERVER_NAME) sudo systemctl restart nginx
+	ssh $(SERVER_NAME) sudo rm /var/log/mysql/mysql-slow.log
+	ssh $(SERVER_NAME) sudo systemctl restart mysql
 
 get-log:
 	ssh $(SERVER_NAME) sudo chown isucon:isucon /var/log/nginx/access.log
