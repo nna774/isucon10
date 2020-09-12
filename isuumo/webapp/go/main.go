@@ -883,8 +883,8 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	d := chair.Depth
 	lens := []int{int(w), int(h), int(d)}
 	sort.Ints(lens)
-	query = fmt.Sprintf(`SELECT %s FROM estate WHERE (door_width >= ? AND door_height >= ?) or (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT ?`, EstateQueryString)
-	err = db.Select(&estates, query, lens[0], lens[1], lens[1], lens[0], Limit)
+	query = fmt.Sprintf(`SELECT %s FROM estate WHERE (door_width >= ? AND door_height >= ?) AND (door_width >= ? OR door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT ?`, EstateQueryString)
+	err = db.Select(&estates, query, lens[0], lens[0], lens[1], lens[1], Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
