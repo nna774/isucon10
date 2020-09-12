@@ -226,7 +226,8 @@ func (mc *MySQLConnectionEnv) ConnectDB() (*sqlx.DB, error) {
 }
 
 func init() {
-	chairSearchConditionString, err := ioutil.ReadFile("../fixture/chair_condition.json")
+	var err error
+	chairSearchConditionString, err = ioutil.ReadFile("../fixture/chair_condition.json")
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
