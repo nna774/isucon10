@@ -399,6 +399,29 @@ func postChair(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
+func toI(v string) int {
+	m := map[string]int{
+		"黒":    0,
+		"白":    1,
+		"赤":    2,
+		"青":    3,
+		"緑":    4,
+		"黄":    5,
+		"紫":    6,
+		"ピンク":  7,
+		"オレンジ": 8,
+		"水色":   9,
+		"ネイビー": 10,
+		"ベージュ": 11,
+
+		"ゲーミングチェア": 0,
+		"座椅子":      1,
+		"エルゴノミクス":  2,
+		"ハンモック":    3,
+	}
+	return m[v]
+}
+
 func searchChairs(c echo.Context) error {
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
@@ -472,13 +495,13 @@ func searchChairs(c echo.Context) error {
 	}
 
 	if c.QueryParam("kind") != "" {
-		conditions = append(conditions, "kind = ?")
-		params = append(params, c.QueryParam("kind"))
+		conditions = append(conditions, "kindi = ?")
+		params = append(params, toI(c.QueryParam("kind")))
 	}
 
 	if c.QueryParam("color") != "" {
-		conditions = append(conditions, "color = ?")
-		params = append(params, c.QueryParam("color"))
+		conditions = append(conditions, "colori = ?")
+		params = append(params, toI(c.QueryParam("color")))
 	}
 
 	if c.QueryParam("features") != "" {
