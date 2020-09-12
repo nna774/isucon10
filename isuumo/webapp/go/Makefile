@@ -16,3 +16,4 @@ get-log2:
 	ssh isucon-server2 sudo chown isucon:isucon /var/log/nginx/access.log
 	scp isucon-server2:/var/log/nginx/access.log 2.log
 	alp ltsv -m "/api/chair/\d+","/api/estate/\d+","/api/recommended_estate/\d+","/api/estate/req_doc/\d+","/api/chair/buy/\d+" < 2.log
+	wc -l 2.log
